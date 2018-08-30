@@ -4,9 +4,48 @@ Refer to paper Knowledgify for more details
 
 Things to do:
 
-- [ ] Train the current setup (resnet and see if the result is the same)
-- [ ] Integrate MobileNetV2
-- [ ] Train with distillation
+- [ ] Train the current setup (resnet101 and see if the result is the same)
+- [ ] Train resnet50
+- [ ] Integrate MobileNetV2 and train
+- [ ] Train distillation with no augmentation
+- [ ] Train distillation with classical augmentation
+- [ ] Train distillation with mixup
+- [ ] Train distillation with manifold mixup
+
+
+Understanding the code:
+
+1. coco.py
+2. model.py
+    * compose_image_meta
+        * 1d array contains input image information
+    * norm_boxes_graph
+        * TODO how does this work?
+    * resnet_graph
+        * 
+    * class MaskRCNN:
+        * properties
+            * mode = 'training' or 'inference'
+            * config
+            * model_dir
+            * keras_model (=self.build()) this is the actual model used
+        * graph
+            * rpn
+                * input_rpn_match [None, 1]
+                * input_rpn_box [None, 4]
+            * GT
+                * input_gt_class_ids [None]
+                * input_gt_boxes [None, 4]
+                    * gt_boxes (normalized)
+                * input_gt_masks
+3. utils.py
+4. visualize.py
+5. config.py
+    * USE_MINI_MASK = True
+        * MINI_MASK_SHAPE=(56 ,56) 
+    * 
+
+
 
 
 
@@ -201,8 +240,8 @@ If you use Docker, the code has been verified to work on
     ```bash
     python3 setup.py install
     ``` 
-3. Download pre-trained COCO weights (mask_rcnn_coco.h5) from the [releases page](https://github.com/matterport/Mask_RCNN/releases).
-4. (Optional) To train or test on MS COCO install `pycocotools` from one of these repos. They are forks of the original pycocotools with fixes for Python3 and Windows (the official repo doesn't seem to be active anymore).
+4. Download pre-trained COCO weights (mask_rcnn_coco.h5) from the [releases page](https://github.com/matterport/Mask_RCNN/releases).
+5. (Optional) To train or test on MS COCO install `pycocotools` from one of these repos. They are forks of the original pycocotools with fixes for Python3 and Windows (the official repo doesn't seem to be active anymore).
 
     * Linux: https://github.com/waleedka/coco
     * Windows: https://github.com/philferriere/cocoapi.

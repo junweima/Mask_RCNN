@@ -57,6 +57,10 @@ from mrcnn import model as modellib, utils
 
 # Path to trained weights file
 COCO_MODEL_PATH = os.path.join(ROOT_DIR, "mask_rcnn_coco.h5")
+# MANUAL_MODEL_PATH = os.path.join(ROOT_DIR, "logs/coco20180825T1435/mask_rcnn_coco_0039.h5") # resnet101 
+MANUAL_MODEL_PATH = os.path.join(ROOT_DIR, "logs/coco20180825T1435/mask_rcnn_coco_0040.h5")
+# coco20180830T1612 mbv1
+
 
 # Directory to save logs and model checkpoints, if not provided
 # through the command line argument --logs
@@ -78,13 +82,15 @@ class CocoConfig(Config):
 
     # We use a GPU with 12GB memory, which can fit two images.
     # Adjust down if you use a smaller GPU.
-    IMAGES_PER_GPU = 2
+    IMAGES_PER_GPU = 3
 
     # Uncomment to train on 8 GPUs (default is 1)
     GPU_COUNT = 1
 
     # Number of classes (including background)
     NUM_CLASSES = 1 + 80  # COCO has 80 classes
+
+    # BACKBONE = "resnet50"
 
 
 ############################################################
@@ -428,6 +434,11 @@ if __name__ == '__main__':
                         metavar="<True|False>",
                         help='Automatically download and unzip MS-COCO files (default=False)',
                         type=bool)
+    parser.add_argument('--backbone', required=False,
+                        default='mbv1',
+                        metavar="mbv1 | mbv2 | resnet50 | resnet101",
+                        help="backbone model used")
+
     args = parser.parse_args()
     print("Command: ", args.command)
     print("Model: ", args.model)
@@ -435,6 +446,7 @@ if __name__ == '__main__':
     print("Year: ", args.year)
     print("Logs: ", args.logs)
     print("Auto Download: ", args.download)
+    print("backbone used: ", args.backbone)
 
     # Configurations
     if args.command == "train":
@@ -447,6 +459,19 @@ if __name__ == '__main__':
             IMAGES_PER_GPU = 1
             DETECTION_MIN_CONFIDENCE = 0
         config = InferenceConfig()
+
+    # Backbone
+    if args.backbone == 'mbv1':
+        config.BACKBONE = 'mbv1'
+    elif args.backbone == 'mbv2':
+        config.BACKBONE = 'mbv2'
+    elif args.backbone == 'resnet50':
+        config.BACKBONE = 'resnet50'
+    elif args.backbone == 'resnet101':
+        config.BACKBONE = 'resnet101'
+    else:
+        raise ValueError()
+
     config.display()
 
     # Create model
@@ -466,6 +491,8 @@ if __name__ == '__main__':
     elif args.model.lower() == "imagenet":
         # Start from ImageNet trained weights
         model_path = model.get_imagenet_weights()
+    elif args.model.lower() == "manual":
+        model_path = MANUAL_MODEL_PATH
     else:
         model_path = args.model
 
@@ -504,12 +531,16 @@ if __name__ == '__main__':
                     augmentation=augmentation)
 
         # Training - Stage 2
-        # Finetune layers from ResNet stage 4 and up
-        print("Fine tune Resnet stage 4 and up")
+        if config.BACKBONE == "mobilenet":
+            stage_2_layers = '11M+'
+        else:
+            stage_2_layers = '4+'
+
+        print("Fine tune {} stage {} and up".format(config.BACKBONE, stage_2_layers))
         model.train(dataset_train, dataset_val,
                     learning_rate=config.LEARNING_RATE,
                     epochs=120,
-                    layers='4+',
+                    layers=stage_2_layers,
                     augmentation=augmentation)
 
         # Training - Stage 3
